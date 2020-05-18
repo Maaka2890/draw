@@ -1,69 +1,27 @@
+var map = L.map('map').setView([52.058, 4.409], 12);
 
-  //fuction to calculate gray
-L.TileLayer.Grayscale = L.TileLayer.extend({
-    options: {
-        quotaRed: 21,
-        quotaGreen: 171,
-        quotaBlue: 8,
-        quotaDividerTune: 0,
-        quotaDivider: function() {
-            return this.quotaRed + this.quotaGreen + this.quotaBlue + this.quotaDividerTune;
-        }
-    },
+L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+    maxZoom: 18,
+    id: 'mapbox/light-v9',
+    tileSize: 512,
+    zoomOffset: -1,
+    accessToken: 'pk.eyJ1IjoibWFha2EiLCJhIjoiY2lzZnp4eWhvMDAzejJwbnExNmY5ODdsMCJ9.EeEx5fDH-zH3pdvuHMuncg'
+}).addTo(map);
 
-    initialize: function (url, options) {
-        options = options || {}
-        options.crossOrigin = true;
-        L.TileLayer.prototype.initialize.call(this, url, options);
-
-        this.on('tileload', function(e) {
-            this._makeGrayscale(e.tile);
-        });
-    },
-
-    _createTile: function () {
-        var tile = L.TileLayer.prototype._createTile.call(this);
-        tile.crossOrigin = "Anonymous";
-        return tile;
-    },
-
-    _makeGrayscale: function (img) {
-        if (img.getAttribute('data-grayscaled'))
-            return;
-
-                img.crossOrigin = '';
-        var canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        var ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0);
-
-        var imgd = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        var pix = imgd.data;
-        for (var i = 0, n = pix.length; i < n; i += 4) {
-                        pix[i] = pix[i + 1] = pix[i + 2] = (this.options.quotaRed * pix[i] + this.options.quotaGreen * pix[i + 1] + this.options.quotaBlue * pix[i + 2]) / this.options.quotaDivider();
-        }
-        ctx.putImageData(imgd, 0, 0);
-        img.setAttribute('data-grayscaled', true);
-        img.src = canvas.toDataURL();
-    }
-});
-
-// map canvas
-
-L.tileLayer.grayscale = function (url, options) {
-    return new L.TileLayer.Grayscale(url, options);
-};
-  var map = L.map('map').setView([52.058, 4.409], 7);
-
-  L.tileLayer.grayscale('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  }).addTo(map);
 
 // Initialise the FeatureGroup to store editable layers
 var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
+var customMarker= L.Icon.extend({
+    options: {
+        shadowUrl: null,
+        iconAnchor: new L.Point(12, 12),
+        iconSize: new L.Point(24, 24),
+        iconUrl: 'marker.svg'
+    }
+});
 // Initialise the draw control and pass it the FeatureGroup of editable layers
 var drawControl = new L.Control.Draw({
   draw: {
@@ -73,11 +31,25 @@ var drawControl = new L.Control.Draw({
       }
     },
     // disable toolbar item by setting it to false
-    polyline: false,
-    circle: false, // Turns off this drawing tool
-    rectangle: false,
-    marker: false,
-    circlemarker:false,
+    polyline: {
+      shapeOptions: {
+        color: '#cd0049'
+      }
+    },
+    circle: {
+      shapeOptions: {
+        color: '#cd0049'
+      }
+    }, // Turns off this drawing tool
+    rectangle: {
+      shapeOptions: {
+        color: '#cd0049'
+      }
+    },
+    marker: {
+      icon: new customMarker() //Here assign your custom marker
+    },
+    circlemarker: false
     },
   edit: {
     featureGroup: drawnItems
@@ -92,8 +64,18 @@ map.on(L.Draw.Event.CREATED, function (e) {
 
   // Do whatever else you need to. (save to db, add to map etc)
 
+
   drawnItems.addLayer(layer);
 });
 
+var searchControl = new L.esri.Controls.Geosearch().addTo(map);
 
+ var results = new L.LayerGroup().addTo(map);
 
+  searchControl.on('results', function(data){
+    results.clearLayers();
+    
+    //for (var i = data.results.length - 1; i >= 0; i--) {
+      //results.addLayer(L.marker(data.results[i].latlng));
+    //} ADS MARKER
+  });

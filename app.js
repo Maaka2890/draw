@@ -1,15 +1,9 @@
-var map = L.map('map').setView([52.058, 4.409], 12);
-
-L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
-    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-    maxZoom: 18,
-    id: 'mapbox/light-v9',
-    tileSize: 512,
-    zoomOffset: -1,
-    accessToken: 'pk.eyJ1IjoibWFha2EiLCJhIjoiY2lzZnp4eWhvMDAzejJwbnExNmY5ODdsMCJ9.EeEx5fDH-zH3pdvuHMuncg'
-}).addTo(map);
-
-
+// Mapbox layer
+var osmUrl = 'https://api.mapbox.com/styles/v1/mapbox/light-v9/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFha2EiLCJhIjoiY2lzZnp4eWhvMDAzejJwbnExNmY5ODdsMCJ9.EeEx5fDH-zH3pdvuHMuncg',
+            osmAttrib = 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+            osm = L.tileLayer(osmUrl, { maxZoom: 18, attribution: osmAttrib }),
+            map = new L.Map('map', { center: new L.LatLng(52.3, 5.509), zoom: 9 }),
+            drawnItems = L.featureGroup().addTo(map);
 // Initialise the FeatureGroup to store editable layers
 var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
@@ -30,7 +24,7 @@ var drawControl = new L.Control.Draw({
         color: '#cd0049'
       }
     },
-    // disable toolbar item by setting it to false
+    // change colour for toolbar item  and disabling some by setting it to false
     polyline: {
       shapeOptions: {
         color: '#cd0049'
@@ -56,7 +50,25 @@ var drawControl = new L.Control.Draw({
   }
 });
 
-map.addControl(drawControl);
+// adding Kadaster overlay layer
+    var Kadaster = L.tileLayer.wms('https://geodata.nationaalgeoregister.nl/inspire/cp/wms?', {
+            layers: 'CP.CadastralBoundary',
+            format: 'image/png',
+            transparent: true,
+            attribution: 'Kadaster-CP'
+        });
+
+// addig google as background and buttons to control the layers
+L.control.layers({
+        'MapBox': osm.addTo(map),
+        "Google": L.tileLayer('http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}', {
+            attribution: 'google'
+        })
+    }, 
+    { 'TekenLaag': drawnItems,
+      'Kadaster': Kadaster},
+    { position: 'topleft', collapsed: false }).addTo(map);
+    map.addControl(drawControl);
 
 map.on(L.Draw.Event.CREATED, function (e) {
   var type = e.layerType
